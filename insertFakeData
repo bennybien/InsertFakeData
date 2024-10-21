@@ -1,0 +1,40 @@
+from faker import Faker
+import requests
+from multiprocessing import Pool, Manager
+from ctypes import c_int
+
+fake = Faker()
+times = 100000
+
+url = Target_domain
+headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': 'ASPSESSIONIDAECTSQBD=CPJBNGFCANBBMPCFJPBLDOEO'
+}
+
+def get_random_email():
+    random_choice = fake.random_int(min=0, max=2)
+    if random_choice == 0:
+        nine_length_nums = fake.random_int(min=100000000, max=999999999)
+        qq_num = f"1{nine_length_nums}"
+        email = f"{qq_num}@qq.com"
+    elif random_choice == 1:
+        email = fake.email()
+    else:
+        email = fake.company_email()
+    return email
+
+def send_request(index, counter):
+    email = get_random_email()
+    password_length = fake.random_int(min=5, max=20)
+    password = fake.password(length=password_length)
+    payload = f'wu={email}&wp={password}&x=17&y=14'
+    response = requests.request("POST", url, headers=headers, data=payload)
+    counter.value += 1
+    print(counter.value, response.status_code, email, "\t", password)
+
+if __name__ == '__main__':
+    with Manager() as manager:
+        counter = manager.Value(c_int, 0)
+        with Pool(50) as p:
+            p.starmap(send_request, [(i, counter) for i in range(times)])
